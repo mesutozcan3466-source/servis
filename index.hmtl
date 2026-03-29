@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#060d1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ServisApp">
+<title>Servis Asistanı</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+/* ============================================
+   DESIGN SYSTEM
+   ============================================ */
+:root {
+  --ink:       #060d1a;
+  --ink2:      #0d1829;
+  --ink3:      #152238;
+  --glass:     rgba(255,255,255,0.04);
+  --glass2:    rgba(255,255,255,0.07);
+  --rim:       rgba(255,255,255,0.09);
+  --rim2:      rgba(255,255,255,0.14);
+  --amber:     #f59e0b;
+  --amber2:    #fbbf24;
+  --amber-glow:rgba(245,158,11,0.25);
+  --blue:      #3b82f6;
+  --blue2:     #60a5fa;
+  --cyan:      #06b6d4;
+  --green:     #10b981;
+  --green2:    #34d399;
+  --red:       #ef4444;
+  --red2:      #f87171;
+  --muted:     rgba(255,255,255,0.38);
+  --muted2:    rgba(255,255,255,0.18);
+  --text:      #e8edf5;
+  --text2:     rgba(232,237,245,0.75);
+  --r-sm:      8px;
+  --r-md:      12px;
+  --r-lg:      18px;
+  --r-xl:      24px;
+  --shadow:    0 8px 32px rgba(0,0,0,0.45);
+  --shadow-sm: 0 2px 12px rgba(0,0,0,0.35);
+}
+
+- { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html, body {
+height:100%; overflow:hidden;
+font-family:‘Plus Jakarta Sans’,sans-serif;
+background:var(–ink);
+color:var(–text);
+font-size:14px;
+line-height:1.5;
+}
+
+/* BACKGROUND MESH */
+body::before {
+content:’’;
+position:fixed; inset:0; z-index:0;
+background:
+radial-gradient(ellipse 80% 50% at 20% -10%, rgba(245,158,11,0.08) 0%, transparent 60%),
+radial-gradient(ellipse 60% 40% at 80% 110%, rgba(59,130,246,0.07) 0%, transparent 55%),
+radial-gradient(ellipse 100% 80% at 50% 50%, rgba(6,182,212,0.03) 0%, transparent 70%);
+pointer-events:none;
+}
+
+/* ── SCROLL ── */
+.scr { overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; }
+.scr::-webkit-scrollbar { width:3px; }
+.scr::-webkit-scrollbar-thumb { background:var(–rim); border-radius:2px; }
+
+/* ── TYPOGRAPHY ── */
+.mono { font-family:‘Space Mono’,monospace; }
+.label { font-size:10px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(–muted); }
+.title-lg { font-size:22px; font-weight:800; }
+.title-md { font-size:16px; font-weight:700; }
+.title-sm { font-size:13px; font-weight:700; }
+
+/* ── GLASS CARDS ── */
+.card {
+background:var(–glass);
+border:1px solid var(–rim);
+border-radius:var(–r-lg);
+backdrop-filter:blur(12px);
+-webkit-backdrop-filter:blur(12px);
+}
+.card-solid {
+background:var(–ink2);
+border:1px solid var(–rim);
+border-radius:var(–r-lg);
+}
+.card-amber {
+background:linear-gradient(135deg, rgba(245,158,11,0.12), rgba(251,191,36,0.06));
+border:1px solid rgba(245,158,11,0.3);
+border-radius:var(–r-lg);
+}
+.card-green {
+background:linear-gradient(135deg, rgba(16,185,129,0.12), rgba(6,182,212,0.06));
+border:1px solid rgba(16,185,129,0.3);
+border-radius:var(–r-lg);
+}
+.card-blue {
+background:linear-gradient(135deg, rgba(59,130,246,0.12), rgba(6,182,212,0.06));
+border:1px solid rgba(59,130,246,0.3);
+border-radius:var(–r-lg);
+}
+
+/* ── BUTTONS ── */
+.btn {
+display:inline-flex; align-items:center; gap:7px;
+padding:9px 16px; border-radius:var(–r-sm);
+font-family:‘Plus Jakarta Sans’,sans-serif;
+font-size:13px; font-weight:700;
+border:none; cursor:pointer;
+transition:all 0.18s cubic-bezier(0.4,0,0.2,1);
+white-space:nowrap; position:relative; overflow:hidden;
+}
+.btn::after {
+content:’’; position:absolute; inset:0;
+background:rgba(255,255,255,0);
+transition:background 0.15s;
+}
+.btn:hover::after { background:rgba(255,255,255,0.06); }
+.btn:active { transform:scale(0.97); }
+
+.btn-amber {
+background:linear-gradient(135deg, var(–amber), #d97706);
+color:#000; box-shadow:0 4px 20px rgba(245,158,11,0.35);
+}
+.btn-amber:hover { box-shadow:0 6px 28px rgba(245,158,11,0.5); transform:translateY(-1px); }
+.btn-blue {
+background:linear-gradient(135deg, #3b82f6, #2563eb);
+color:#fff; box-shadow:0 4px 20px rgba(59,130,246,0.3);
+}
+.btn-blue:hover { box-shadow:0 6px 28px rgba(59,130,246,0.45); transform:translateY(-1px); }
+.btn-green {
+background:linear-gradient(135deg, var(–green), #059669);
+color:#fff; box-shadow:0 4px 20px rgba(16,185,129,0.3);
+}
+.btn-green:hover { box-shadow:0 6px 28px rgba(16,185,129,0.45); transform:translateY(-1px); }
+.btn-red {
+background:linear-gradient(135deg, var(–red), #dc2626);
+color:#fff;
+}
+.btn-ghost {
+background:var(–glass2); border:1px solid var(–rim);
+color:var(–text);
+}
+.btn-ghost:hover { border-color:var(–rim2); }
+.btn-wa {
+background:linear-gradient(135deg, #25D366, #128C7E);
+color:#fff; box-shadow:0 4px 20px rgba(37,211,102,0.3);
+}
+.btn-sm { padding:5px 11px; font-size:12px; border-radius:7px; }
+.btn-lg { padding:14px 24px; font-size:15px; border-radius:var(–r-md); }
+.btn-block { width:100%; justify-content:center; }
+
+/* ── FORM ── */
+.fg { margin-bottom:14px; }
+.fg-row { display:flex; gap:10px; }
+.fg-row .fg { flex:1; }
+.fl {
+display:block; margin-bottom:6px;
+font-size:11px; font-weight:700;
+letter-spacing:0.8px; text-transform:uppercase;
+color:var(–muted);
+}
+.fl .req { color:var(–amber); }
+.fi {
+width:100%;
+background:rgba(255,255,255,0.05);
+border:1px solid var(–rim);
+border-radius:var(–r-sm);
+padding:11px 14px;
+color:var(–text);
+font-family:‘Plus Jakarta Sans’,sans-serif;
+font-size:14px;
+outline:none;
+transition:border-color 0.2s, background 0.2s;
+}
+.fi:focus {
+border-color:rgba(245,158,11,0.6);
+background:rgba(245,158,11,0.04);
+}
+.fi::placeholder { color:var(–muted2); }
+.fi.err { border-color:rgba(239,68,68,0.6); }
+
+/* ── PILL / BADGE ── */
+.pill {
+display:inline-flex; align-items:center; gap:5px;
+padding:3px 10px; border-radius:20px;
+font-size:11px; font-weight:700;
+border:1px solid;
+}
+.pill-amber { color:var(–amber); border-color:rgba(245,158,11,0.35); background:rgba(245,158,11,0.1); }
+.pill-green { color:var(–green2); border-color:rgba(16,185,129,0.35); background:rgba(16,185,129,0.1); }
+.pill-blue  { color:var(–blue2); border-color:rgba(59,130,246,0.35); background:rgba(59,130,246,0.1); }
+.pill-red   { color:var(–red2); border-color:rgba(239,68,68,0.35); background:rgba(239,68,68,0.1); }
+.pill-muted { color:var(–muted); border-color:var(–rim); background:var(–glass); }
+
+/* ── PULSE DOTS ── */
+.pulse { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+.pulse-green { background:var(–green); animation:pulseAnim 2s infinite; }
+.pulse-amber { background:var(–amber); animation:pulseAnim 2s infinite; }
+.pulse-muted { background:rgba(255,255,255,0.25); }
+@keyframes pulseAnim {
+0%,100% { box-shadow:0 0 0 0 currentColor; opacity:1; }
+50% { box-shadow:0 0 0 5px transparent; opacity:0.8; }
+}
+
+/* ── TOPBAR ── */
+.topbar {
+height:56px; flex-shrink:0;
+display:flex; align-items:center; justify-content:space-between;
+padding:0 16px; gap:10px;
+background:rgba(6,13,26,0.85);
+border-bottom:1px solid var(–rim);
+backdrop-filter:blur(20px);
+-webkit-backdrop-filter:blur(20px);
+position:sticky; top:0; z-index:100;
+}
+.logo-wrap { display:flex; align-items:center; gap:10px; flex-shrink:0; min-width:0; }
+.logo-mark {
+width:36px; height:36px; border-radius:10px; flex-shrink:0;
+background:linear-gradient(135deg, var(–amber), #d97706);
+display:flex; align-items:center; justify-content:center;
+font-size:18px;
+box-shadow:0 4px 16px rgba(245,158,11,0.4);
+}
+.logo-name {
+font-size:15px; font-weight:800;
+background:linear-gradient(135deg, #fff 30%, var(–amber2));
+-webkit-background-clip:text; -webkit-text-fill-color:transparent;
+white-space:nowrap;
+}
+.logo-sub { font-size:10px; color:var(–muted); margin-top:-2px; }
+.topbar-right { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+
+/* ── USER CHIP ── */
+.user-chip {
+display:flex; align-items:center; gap:8px;
+background:var(–glass2); border:1px solid var(–rim);
+border-radius:20px; padding:4px 12px 4px 4px;
+cursor:pointer; transition:all 0.2s;
+}
+.user-chip:hover { border-color:var(–rim2); }
+.user-av {
+width:28px; height:28px; border-radius:50%;
+display:flex; align-items:center; justify-content:center;
+font-size:12px; font-weight:800; flex-shrink:0;
+}
+.user-av-admin { background:linear-gradient(135deg,var(–amber),#d97706); color:#000; }
+.user-av-driver { background:linear-gradient(135deg,var(–green),#059669); color:#fff; }
+
+/* ── NOTIFICATION CHIP ── */
+.notif-chip {
+background:var(–red); color:#fff;
+border-radius:16px; padding:4px 10px;
+font-size:11px; font-weight:700;
+cursor:pointer; display:flex; align-items:center; gap:5px;
+animation:notifPulse 3s infinite;
+}
+@keyframes notifPulse { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.4);} 50%{box-shadow:0 0 0 6px transparent;} }
+
+/* ── TABBAR ── */
+.tabbar {
+display:flex; overflow-x:auto; scrollbar-width:none;
+background:rgba(6,13,26,0.7);
+border-bottom:1px solid var(–rim);
+backdrop-filter:blur(12px);
+flex-shrink:0;
+}
+.tabbar::-webkit-scrollbar { display:none; }
+.tab {
+display:flex; align-items:center; gap:6px;
+padding:12px 18px; flex-shrink:0;
+font-size:12px; font-weight:700; letter-spacing:0.3px;
+color:var(–muted); cursor:pointer;
+border-bottom:2px solid transparent;
+transition:all 0.2s; white-space:nowrap;
+}
+.tab.active { color:var(–amber); border-color:var(–amber); }
+.tab:hover:not(.active) { color:var(–text2); }
+
+/* ── PAGE ── */
+#appShell { display:none; flex-direction:column; height:100%; position:relative; z-index:1; }
+#content { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+#content::-webkit-scrollbar { width:3px; }
+#content::-webkit-scrollbar-thumb { background:var(–rim); border-radius:2px; }
+.page { padding:16px; max-width:1120px; margin:0 auto; }
+
+/* ── STAT CARD ── */
+.stat-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; }
+.stat-box {
+background:var(–glass); border:1px solid var(–rim);
+border-radius:var(–r-md); padding:14px;
+transition:transform 0.2s;
+}
+.stat-box:hover { transform:translateY(-2px); }
+.stat-num { font-size:28px; font-weight:800; font-family:‘Space Mono’,monospace; margin-bottom:3px; }
+.stat-lbl { font-size:11px; font-weight:600; color:var(–muted); text-transform:uppercase; letter-spacing:0.6px; }
+
+/* ── MAP ── */
+.map-wrap {
+height:280px; border-radius:0 0 var(–r-lg) var(–r-lg);
+overflow:hidden; position:relative;
+}
+#adminMap, #driverMap { width:100%; height:100%; }
+.leaflet-container { background:#0d1829 !important; }
+.map-legend-box {
+position:absolute; bottom:10px; right:10px; z-index:1000;
+background:rgba(6,13,26,0.9); border:1px solid var(–rim);
+border-radius:var(–r-sm); padding:8px 11px; font-size:10px;
+backdrop-filter:blur(8px);
+}
+.map-legend-row { display:flex; align-items:center; gap:6px; margin-bottom:3px; }
+.map-legend-row:last-child { margin-bottom:0; }
+
+/* ── VEHICLE CARD ── */
+.vc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+.vc {
+background:var(–glass); border:1px solid var(–rim);
+border-radius:var(–r-lg); padding:16px;
+cursor:pointer; transition:all 0.2s; position:relative;
+overflow:hidden;
+}
+.vc::before {
+content:’’; position:absolute; top:0; left:0; right:0; height:1px;
+background:linear-gradient(90deg, transparent, var(–amber-glow), transparent);
+opacity:0; transition:opacity 0.3s;
+}
+.vc:hover { border-color:var(–rim2); transform:translateY(-3px); box-shadow:var(–shadow); }
+.vc:hover::before { opacity:1; }
+.vc.active-vc { border-color:rgba(16,185,129,0.4); }
+.vc.active-vc::before { opacity:1; background:linear-gradient(90deg, transparent, rgba(16,185,129,0.3), transparent); }
+
+/* ── PROGRESS BAR ── */
+.prog-track { height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden; }
+.prog-fill { height:100%; border-radius:3px; transition:width 0.5s; }
+.prog-amber { background:linear-gradient(90deg, var(–amber), var(–amber2)); }
+.prog-green { background:linear-gradient(90deg, var(–green), var(–cyan)); }
+
+/* ── GROUP CARD ── */
+.gc {
+background:var(–glass); border:1px solid var(–rim);
+border-radius:var(–r-lg); overflow:hidden;
+transition:border-color 0.2s;
+margin-bottom:12px;
+}
+.gc:hover { border-color:var(–rim2); }
+.gc-head {
+padding:13px 16px; border-bottom:1px solid var(–rim);
+display:flex; align-items:center; justify-content:space-between;
+}
+.gc-strip {
+width:4px; height:100%; position:absolute; left:0; top:0; border-radius:2px 0 0 0;
+}
+.gc-students { max-height:180px; overflow-y:auto; }
+.gc-students::-webkit-scrollbar { width:3px; }
+.gc-students::-webkit-scrollbar-thumb { background:var(–rim); }
+.gc-row {
+display:flex; align-items:center; gap:8px;
+padding:7px 16px; font-size:12px;
+border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.gc-row:last-child { border-bottom:none; }
+.gc-row:nth-child(even) { background:rgba(255,255,255,0.02); }
+.gc-foot { padding:10px 16px; border-top:1px solid var(–rim); display:flex; gap:8px; }
+
+/* ── STUDENT CARD ── */
+.sc {
+background:var(–glass); border:1px solid var(–rim);
+border-radius:var(–r-md); overflow:hidden;
+margin-bottom:10px; transition:border-color 0.2s;
+}
+.sc.sc-picked { border-color:rgba(16,185,129,0.35); }
+.sc-head { padding:11px 14px; border-bottom:1px solid var(–rim); display:flex; align-items:center; gap:10px; }
+.sc-num {
+width:26px; height:26px; border-radius:7px; flex-shrink:0;
+background:rgba(255,255,255,0.06); border:1px solid var(–rim);
+display:flex; align-items:center; justify-content:center;
+font-family:‘Space Mono’,monospace; font-size:11px; font-weight:700; color:var(–muted);
+}
+.sc-num.picked { background:rgba(16,185,129,0.15); color:var(–green2); border-color:rgba(16,185,129,0.3); }
+.sc-body { padding:10px 14px; }
+.sc-addr { font-size:12px; color:var(–text2); display:flex; gap:6px; margin-bottom:9px; }
+.sc-phones { display:flex; gap:6px; }
+.sc-phone {
+flex:1; background:rgba(255,255,255,0.04); border:1px solid var(–rim);
+border-radius:var(–r-sm); padding:7px 10px; cursor:pointer; transition:all 0.2s;
+}
+.sc-phone:hover { border-color:rgba(245,158,11,0.4); background:rgba(245,158,11,0.05); }
+.sc-phone-lbl { font-size:9px; font-weight:700; letter-spacing:0.7px; color:var(–muted); text-transform:uppercase; }
+.sc-phone-num { font-family:‘Space Mono’,monospace; font-size:11px; margin-top:2px; }
+
+/* ── BIG ACTION BUTTONS ── */
+.action-btn {
+width:100%; padding:16px; border-radius:var(–r-md);
+font-family:‘Plus Jakarta Sans’,sans-serif;
+font-size:15px; font-weight:800;
+border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px;
+transition:all 0.2s; margin-bottom:10px;
+}
+.action-btn:active { transform:scale(0.98); }
+.action-green {
+background:linear-gradient(135deg, var(–green), #059669);
+color:#fff; box-shadow:0 6px 24px rgba(16,185,129,0.35);
+}
+.action-green:hover { box-shadow:0 8px 32px rgba(16,185,129,0.5); }
+.action-amber {
+background:linear-gradient(135deg, var(–amber), #d97706);
+color:#000; box-shadow:0 6px 24px rgba(245,158,11,0.35);
+}
+.action-outline-red {
+background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.3);
+color:var(–red2);
+}
+.action-outline-red:hover { background:rgba(239,68,68,0.14); }
+
+/* ── DRIVER SIDEBAR ── */
+.drv-layout { display:grid; grid-template-columns:260px 1fr; gap:14px; }
+@media(max-width:640px) {
+.drv-layout { grid-template-columns:1fr; }
+.drv-sb { order:2; }
+}
+.drv-sb { display:flex; flex-direction:column; gap:12px; }
+.group-btn {
+display:flex; align-items:center; gap:10px;
+padding:11px 14px; border-radius:var(–r-md);
+background:var(–glass); border:1px solid var(–rim);
+cursor:pointer; transition:all 0.2s; margin-bottom:7px;
+}
+.group-btn:hover { border-color:var(–rim2); background:var(–glass2); }
+.group-btn.active-gb { border-color:rgba(16,185,129,0.4); background:rgba(16,185,129,0.06); }
+.group-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+/* ── STOP COUNTDOWN ── */
+.stop-cd {
+background:linear-gradient(135deg, rgba(245,158,11,0.1), rgba(251,191,36,0.06));
+border:1.5px solid rgba(245,158,11,0.4);
+border-radius:var(–r-lg); padding:16px; margin-bottom:14px;
+animation:stopBorderPulse 2s infinite;
+}
+@keyframes stopBorderPulse {
+0%,100% { border-color:rgba(245,158,11,0.4); }
+50% { border-color:rgba(245,158,11,0.15); }
+}
+.stop-timer-num { font-size:40px; font-weight:700; font-family:‘Space Mono’,monospace; color:var(–amber); line-height:1; }
+
+/* ── ROUTE TIMELINE ── */
+.rtl { position:relative; padding-left:28px; }
+.rtl-line { position:absolute; left:10px; top:8px; bottom:8px; width:2px; background:var(–rim); }
+.rti { position:relative; padding:6px 0 6px 18px; }
+.rtd {
+position:absolute; left:-19px; top:9px;
+width:13px; height:13px; border-radius:50%;
+border:2px solid; display:flex; align-items:center; justify-content:center;
+font-size:6px; font-weight:700;
+}
+.rtd-done { background:var(–green); border-color:var(–green); color:#fff; }
+.rtd-cur { background:var(–blue); border-color:var(–blue); color:#fff; animation:pulseAnim 1.5s infinite; }
+.rtd-stop { background:var(–amber); border-color:var(–amber); color:#000; }
+.rtd-skip { background:var(–red); border-color:var(–red); color:#fff; }
+.rtd-up { background:var(–ink3); border-color:var(–rim); }
+.rtc {
+background:var(–glass); border:1px solid var(–rim);
+border-radius:8px; padding:7px 11px;
+display:flex; align-items:center; gap:9px; font-size:12px;
+}
+.rtc-cur { border-color:rgba(59,130,246,0.4); }
+.rtc-stop { border-color:rgba(245,158,11,0.4); background:rgba(245,158,11,0.04); }
+.rtc-done { opacity:0.55; }
+
+/* ── TRAFFIC BAR ── */
+.traffic-row {
+display:flex; align-items:center; gap:10px;
+padding:10px 14px; border-radius:var(–r-md);
+margin-bottom:14px; border:1px solid;
+font-size:13px; font-weight:600;
+flex-wrap:wrap; gap:8px;
+}
+.tf-green { background:rgba(16,185,129,0.07); border-color:rgba(16,185,129,0.3); }
+.tf-amber { background:rgba(245,158,11,0.07); border-color:rgba(245,158,11,0.3); }
+.tf-red   { background:rgba(239,68,68,0.07); border-color:rgba(239,68,68,0.3); }
+.tf-btn {
+padding:4px 10px; border-radius:6px; border:1px solid var(–rim);
+background:transparent; font-family:‘Plus Jakarta Sans’,sans-serif;
+font-size:11px; font-weight:700; cursor:pointer; transition:all 0.2s;
+}
+.tf-btn.tf-sel-green { border-color:var(–green); background:rgba(16,185,129,0.15); color:var(–green2); }
+.tf-btn.tf-sel-amber { border-color:var(–amber); background:rgba(245,158,11,0.15); color:var(–amber2); }
+.tf-btn.tf-sel-red   { border-color:var(–red); background:rgba(239,68,68,0.15); color:var(–red2); }
+
+/* ── MODAL ── */
+.ov {
+position:fixed; inset:0; z-index:400;
+background:rgba(0,0,0,0.65); backdrop-filter:blur(8px);
+display:flex; align-items:center; justify-content:center; padding:16px;
+opacity:0; pointer-events:none; transition:opacity 0.25s;
+}
+.ov.open { opacity:1; pointer-events:all; }
+.modal {
+background:var(–ink2); border:1px solid var(–rim2);
+border-radius:var(–r-xl); width:100%; max-width:500px;
+max-height:92vh; overflow-y:auto;
+box-shadow:0 32px 64px rgba(0,0,0,0.6);
+transform:scale(0.95) translateY(8px);
+transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.ov.open .modal { transform:scale(1) translateY(0); }
+.modal::-webkit-scrollbar { width:3px; }
+.modal::-webkit-scrollbar-thumb { background:var(–rim); }
+.mh {
+padding:20px 22px 0;
+display:flex; align-items:center; justify-content:space-between;
+margin-bottom:2px;
+}
+.mt { font-size:17px; font-weight:800; }
+.mc {
+width:30px; height:30px; border-radius:8px;
+background:var(–glass2); border:1px solid var(–rim);
+cursor:pointer; color:var(–text); font-size:13px;
+display:flex; align-items:center; justify-content:center;
+transition:all 0.2s;
+}
+.mc:hover { border-color:rgba(239,68,68,0.5); color:var(–red2); }
+.mb { padding:16px 22px 22px; }
+
+/* ── LICENSE SCREEN ── */
+#licScreen {
+position:fixed; inset:0; z-index:1000;
+display:none; align-items:center; justify-content:center; padding:20px;
+background:var(–ink);
+}
+#licScreen::before {
+content:’’; position:absolute; inset:0;
+background:
+radial-gradient(ellipse 70% 50% at 30% 0%, rgba(245,158,11,0.12) 0%, transparent 55%),
+radial-gradient(ellipse 60% 40% at 70% 100%, rgba(59,130,246,0.08) 0%, transparent 55%);
+pointer-events:none;
+}
+#licScreen.show { display:flex; }
+.lic-card {
+background:rgba(13,24,41,0.9); border:1px solid var(–rim2);
+border-radius:var(–r-xl); width:100%; max-width:430px;
+padding:32px; box-shadow:0 40px 80px rgba(0,0,0,0.7);
+position:relative; z-index:1;
+backdrop-filter:blur(20px);
+}
+.lic-logo { text-align:center; margin-bottom:28px; }
+.lic-icon {
+width:72px; height:72px; border-radius:20px; margin:0 auto 14px;
+background:linear-gradient(135deg, var(–amber), #d97706);
+display:flex; align-items:center; justify-content:center;
+font-size:36px; box-shadow:0 8px 32px rgba(245,158,11,0.45);
+}
+.lic-title-txt {
+font-size:26px; font-weight:800;
+background:linear-gradient(135deg, #fff 20%, var(–amber2));
+-webkit-background-clip:text; -webkit-text-fill-color:transparent;
+}
+.lic-sub-txt { font-size:13px; color:var(–muted); margin-top:6px; line-height:1.6; }
+
+.code-input {
+width:100%;
+background:rgba(255,255,255,0.04);
+border:1.5px solid var(–rim2);
+border-radius:var(–r-md);
+padding:16px; text-align:center;
+font-family:‘Space Mono’,monospace;
+font-size:20px; font-weight:700;
+letter-spacing:4px; text-transform:uppercase;
+color:var(–text); outline:none;
+transition:all 0.2s;
+margin:16px 0 8px;
+}
+.code-input:focus { border-color:rgba(245,158,11,0.6); background:rgba(245,158,11,0.04); }
+.code-input.ok  { border-color:rgba(16,185,129,0.6); background:rgba(16,185,129,0.05); color:var(–green2); }
+.code-input.bad { border-color:rgba(239,68,68,0.6); background:rgba(239,68,68,0.04); }
+
+.lic-msg {
+text-align:center; padding:9px 14px; border-radius:var(–r-sm);
+font-size:13px; font-weight:600; display:none; margin-bottom:12px;
+}
+.lic-msg.show { display:block; }
+.lic-msg.ok { background:rgba(16,185,129,0.12); color:var(–green2); border:1px solid rgba(16,185,129,0.3); }
+.lic-msg.err { background:rgba(239,68,68,0.1); color:var(–red2); border:1px solid rgba(239,68,68,0.3); }
+
+/* Dev Panel */
+.dev-table { display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto; }
+.dev-row {
+display:flex; align-items:center; gap:10px;
+padding:10px 13px; border-radius:var(–r-md);
+background:rgba(255,255,255,0.04); border:1px solid var(–rim);
+}
+.dev-row.dr-active { border-color:rgba(16,185,129,0.3); background:rgba(16,185,129,0.05); }
+.dev-row.dr-pending { border-color:rgba(245,158,11,0.3); background:rgba(245,158,11,0.04); }
+.dev-row.dr-expired { opacity:0.55; }
+.dev-code { font-family:‘Space Mono’,monospace; font-size:13px; font-weight:700; letter-spacing:1px; }
+
+/* ── TOAST ── */
+#tc { position:fixed; bottom:18px; right:18px; z-index:800; display:flex; flex-direction:column; gap:8px; pointer-events:none; }
+.toast {
+display:flex; align-items:center; gap:9px;
+padding:11px 15px; border-radius:var(–r-md);
+background:rgba(13,24,41,0.95); border:1px solid var(–rim2);
+font-size:13px; font-weight:600; min-width:210px; max-width:300px;
+box-shadow:0 10px 32px rgba(0,0,0,0.5);
+backdrop-filter:blur(12px);
+animation:toastIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+pointer-events:all;
+}
+.toast.success { border-color:rgba(16,185,129,0.5); }
+.toast.error   { border-color:rgba(239,68,68,0.5); }
+.toast.warning { border-color:rgba(245,158,11,0.5); }
+.toast.info    { border-color:rgba(59,130,246,0.5); }
+@keyframes toastIn { from { transform:translateX(110%); opacity:0; } to { transform:translateX(0); opacity:1; } }
+
+/* ── SEPARATOR ── */
+.sep { height:1px; background:var(–rim); margin:14px 0; }
+.sep-row { display:flex; align-items:center; gap:12px; margin:16px 0; }
+.sep-row::before,.sep-row::after { content:’’; flex:1; height:1px; background:var(–rim); }
+
+/* ── PROJECT SCREEN ── */
+#projScreen {
+position:fixed; inset:0; z-index:200;
+display:none; align-items:flex-start; justify-content:center;
+padding:24px 16px; overflow-y:auto;
+background:var(–ink);
+}
+#projScreen::before {
+content:’’; position:fixed; inset:0;
+background:
+radial-gradient(ellipse 80% 50% at 15% -5%, rgba(245,158,11,0.07) 0%, transparent 55%),
+radial-gradient(ellipse 60% 40% at 85% 105%, rgba(59,130,246,0.06) 0%, transparent 55%);
+pointer-events:none; z-index:0;
+}
+#projScreen.show { display:flex; }
+.proj-inner { width:100%; max-width:760px; position:relative; z-index:1; }
+.proj-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:12px; margin-bottom:14px; }
+.proj-card {
+background:var(–glass); border:1.5px solid var(–rim);
+border-radius:var(–r-xl); padding:20px;
+cursor:pointer; transition:all 0.25s; position:relative; overflow:hidden;
+}
+.proj-card::after {
+content:’’; position:absolute; inset:0; border-radius:var(–r-xl);
+background:linear-gradient(135deg, rgba(255,255,255,0.05), transparent);
+opacity:0; transition:opacity 0.25s;
+}
+.proj-card:hover { border-color:rgba(245,158,11,0.4); transform:translateY(-4px); box-shadow:0 16px 40px rgba(0,0,0,0.5); }
+.proj-card:hover::after { opacity:1; }
+.proj-icon { width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:24px; margin-bottom:12px; }
+.proj-add-card {
+background:transparent; border:1.5px dashed var(–rim);
+display:flex; flex-direction:column; align-items:center; justify-content:center;
+min-height:130px;
+}
+.proj-add-card:hover { border-color:rgba(245,158,11,0.4); background:rgba(245,158,11,0.03); }
+.pend-notif {
+display:flex; align-items:center; gap:12px;
+padding:13px 16px; border-radius:var(–r-md);
+background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.3);
+cursor:pointer; transition:all 0.2s; margin-bottom:14px;
+}
+.pend-notif:hover { background:rgba(245,158,11,0.13); }
+
+/* QR */
+.qr-box { background:#fff; border-radius:var(–r-md); padding:14px; display:inline-block; }
+
+/* Help */
+.help-slide {
+position:fixed; right:0; top:56px; bottom:0; width:310px; z-index:300;
+background:rgba(6,13,26,0.97); border-left:1px solid var(–rim);
+backdrop-filter:blur(20px); display:flex; flex-direction:column;
+transform:translateX(100%); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+.help-slide.open { transform:translateX(0); }
+.help-hd { padding:14px 16px; border-bottom:1px solid var(–rim); display:flex; align-items:center; justify-content:space-between; }
+.help-body { flex:1; overflow-y:auto; padding:14px 16px; }
+.help-body::-webkit-scrollbar { width:3px; }
+.help-body::-webkit-scrollbar-thumb { background:var(–rim); }
+.help-item { background:var(–glass); border-radius:var(–r-md); padding:13px; margin-bottom:10px; border:1px solid var(–rim); }
+.help-item-title { font-size:13px; font-weight:700; margin-bottom:5px; display:flex; align-items:center; gap:8px; }
+.help-item-text { font-size:12px; color:var(–text2); line-height:1.7; }
+
+/* VOICE BTN */
+.voice-btn {
+width:36px; height:36px; border-radius:50%;
+background:var(–glass2); border:1.5px solid var(–rim);
+cursor:pointer; display:flex; align-items:center; justify-content:center;
+font-size:16px; transition:all 0.2s; flex-shrink:0;
+}
+.voice-btn.speaking { border-color:rgba(16,185,129,0.6); background:rgba(16,185,129,0.12); animation:pulseAnim 1.5s infinite; }
+
+/* ASSIGN MODAL */
+.assign-drv-row {
+display:flex; align-items:center; gap:11px;
+padding:11px 13px; border-radius:var(–r-md);
+background:var(–glass); border:1.5px solid var(–rim);
+cursor:pointer; transition:all 0.2s; margin-bottom:8px;
+}
+.assign-drv-row:hover { border-color:var(–rim2); }
+.assign-drv-row.sel { border-color:rgba(245,158,11,0.5); background:rgba(245,158,11,0.06); }
+
+/* Summary rows */
+.sum-row { display:flex; justify-content:space-between; align-items:flex-start; padding:7px 0; border-bottom:1px solid var(–rim); font-size:13px; }
+.sum-row:last-child { border-bottom:none; }
+.sum-lbl { color:var(–muted); font-size:12px; }
+.sum-val { font-weight:600; text-align:right; max-width:60%; }
+
+/* BASVURU */
+.bas-card { background:var(–glass); border:1px solid var(–rim); border-radius:var(–r-lg); margin-bottom:10px; overflow:hidden; transition:border-color 0.2s; }
+.bas-card:hover { border-color:var(–rim2); }
+.bas-head { padding:11px 15px; border-bottom:1px solid var(–rim); display:flex; align-items:center; gap:9px; }
+.bas-body { padding:11px 15px; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.bas-f { padding:10px 15px; border-top:1px solid var(–rim); display:flex; gap:7px; flex-wrap:wrap; }
+.bas-info-lbl { font-size:10px; font-weight:700; color:var(–muted); text-transform:uppercase; letter-spacing:0.6px; }
+.bas-info-val { font-size:12px; font-weight:600; margin-top:2px; }
+
+/* GPS badge */
+.gps-pill {
+display:inline-flex; align-items:center; gap:5px;
+padding:4px 9px; border-radius:14px; font-size:10px; font-weight:700;
+}
+.gps-ok  { background:rgba(16,185,129,0.15); color:var(–green2); border:1px solid rgba(16,185,129,0.3); }
+.gps-wait { background:rgba(245,158,11,0.12); color:var(–amber2); border:1px solid rgba(245,158,11,0.3); }
+
+/* Driver map mini */
+.drv-map-mini { height:180px; border-radius:var(–r-md); overflow:hidden; border:1px solid var(–rim); margin-bottom:10px; }
+
+/* Veli form steps */
+.vsteps { display:flex; align-items:center; justify-content:center; margin-bottom:22px; }
+.vstep { display:flex; flex-direction:column; align-items:center; gap:4px; flex:1; }
+.vstep-c { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; border:2px solid var(–rim); background:var(–ink3); color:var(–muted); transition:all 0.3s; }
+.vstep.v-done .vstep-c { background:var(–green); border-color:var(–green); color:#fff; }
+.vstep.v-act .vstep-c  { background:var(–amber); border-color:var(–amber); color:#000; }
+.vstep-l { font-size:10px; color:var(–muted); white-space:nowrap; }
+.vstep.v-act .vstep-l  { color:var(–amber2); }
+.vstep.v-done .vstep-l { color:var(–green2); }
+.vstep-line { flex:1; height:2px; background:var(–rim); align-self:flex-start; margin-top:13px; max-width:36px; }
+.vstep-line.v-done { background:var(–green); }
+
+/* Color swatch */
+.swatch { width:28px; height:28px; border-radius:50%; cursor:pointer; border:3px solid transparent; transition:transform 0.15s; }
+.swatch:hover { transform:scale(1.15); }
+.swatch.sel { border-color:#fff; }
+
+/* Section header */
+.sh { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px; }
+.divider { height:1px; background:var(–rim); margin:16px 0; }
+
+/* GPS Coords */
+#gpsCoordsTxt { font-family:‘Space Mono’,monospace; font-size:10px; color:var(–muted); }
+
+/* ── ROUTE OPTIMIZATION ── */
+#routeMap { width:100%; height:100%; }
+.route-map-wrap {
+height:420px; border-radius:var(–r-lg); overflow:hidden;
+border:1px solid var(–rim); position:relative;
+margin-bottom:14px;
+}
+.route-map-controls {
+position:absolute; top:10px; left:10px; z-index:1000;
+display:flex; flex-direction:column; gap:6px;
+}
+.rmc-btn {
+background:rgba(6,13,26,0.92); border:1px solid var(–rim2);
+border-radius:var(–r-sm); padding:7px 12px;
+font-family:‘Plus Jakarta Sans’,sans-serif; font-size:12px; font-weight:700;
+color:var(–text); cursor:pointer; backdrop-filter:blur(8px);
+display:flex; align-items:center; gap:7px; white-space:nowrap;
+transition:all 0.2s;
+}
+.rmc-btn:hover { border-color:var(–amber); color:var(–amber2); }
+.rmc-btn.active { border-color:var(–amber); background:rgba(245,158,11,0.12); color:var(–amber2); }
+.route-legend {
+position:absolute; bottom:10px; right:10px; z-index:1000;
+background:rgba(6,13,26,0.92); border:1px solid var(–rim2);
+border-radius:var(–r-md); padding:10px 13px;
+backdrop-filter:blur(8px); font-size:11px; min-width:160px;
+}
+.route-legend-title { font-weight:700; margin-bottom:8px; color:var(–muted); letter-spacing:0.5px; text-transform:uppercase; font-size:10px; }
+.rl-row { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
+.rl-row:last-child { margin-bottom:0; }
+.rl-line { width:28px; height:3px; border-radius:2px; flex-shrink:0; }
+.rl-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+/* Overlap panel */
+.overlap-panel {
+background:rgba(239,68,68,0.07); border:1px solid rgba(239,68,68,0.3);
+border-radius:var(–r-lg); padding:16px; margin-bottom:14px;
+}
+.overlap-item {
+background:rgba(255,255,255,0.04); border:1px solid rgba(239,68,68,0.2);
+border-radius:var(–r-md); padding:12px 14px; margin-bottom:10px;
+transition:border-color 0.2s;
+}
+.overlap-item:hover { border-color:rgba(239,68,68,0.4); }
+.overlap-item:last-child { margin-bottom:0; }
+
+/* Transfer suggestion */
+.transfer-card {
+background:rgba(16,185,129,0.07); border:1px solid rgba(16,185,129,0.3);
+border-radius:var(–r-md); padding:12px 14px; margin-bottom:10px;
+transition:border-color 0.2s;
+}
+.transfer-card:hover { border-color:rgba(16,185,129,0.5); }
+
+/* Group selector chips */
+.group-chip-row { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:12px; }
+.group-chip {
+display:flex; align-items:center; gap:6px;
+padding:6px 12px; border-radius:20px;
+border:1.5px solid; cursor:pointer; font-size:12px; font-weight:700;
+transition:all 0.2s; background:transparent;
+font-family:‘Plus Jakarta Sans’,sans-serif;
+}
+.group-chip:hover { opacity:0.85; }
+.group-chip.chip-off { opacity:0.35; }
+
+/* Km savings banner */
+.km-savings {
+background:linear-gradient(135deg, rgba(16,185,129,0.1), rgba(6,182,212,0.06));
+border:1px solid rgba(16,185,129,0.3); border-radius:var(–r-lg);
+padding:16px; display:flex; align-items:center; gap:14px; margin-bottom:14px;
+}
+.km-savings-num { font-family:‘Space Mono’,monospace; font-size:32px; font-weight:700; color:var(–green2); }
+
+/* Student transfer drag row */
+.stud-transfer-row {
+display:flex; align-items:center; gap:8px;
+padding:9px 12px; border-radius:var(–r-md);
+background:var(–glass); border:1px solid var(–rim);
+margin-bottom:7px; font-size:12px; cursor:grab;
+transition:all 0.2s;
+}
+.stud-transfer-row:hover { border-color:var(–rim2); background:var(–glass2); }
+.stud-transfer-row.dragging { opacity:0.5; border-color:var(–amber); cursor:grabbing; }
+
+/* Drop zone */
+.drop-zone {
+border:2px dashed var(–rim); border-radius:var(–r-md);
+padding:14px; text-align:center; color:var(–muted);
+font-size:12px; transition:all 0.2s; min-height:60px;
+display:flex; align-items:center; justify-content:center;
+}
+.drop-zone.drag-over { border-color:var(–amber); background:rgba(245,158,11,0.06); color:var(–amber2); }
+
+/* Route stats grid */
+.route-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:8px; margin-bottom:14px; }
+.route-stat { background:var(–glass); border:1px solid var(–rim); border-radius:var(–r-md); padding:11px; text-align:center; }
+.route-stat-num { font-family:‘Space Mono’,monospace; font-size:20px; font-weight:700; }
+.route-stat-lbl { font-size:10px; color:var(–muted); text-transform:uppercase; letter-spacing:0.5px; margin-top:3px; }
+</style>
+
+</head>
+<body>
+
+<!-- ───── LICENSE SCREEN ───── -->
+
+<div id="licScreen">
+  <div class="lic-card" id="licCard"></div>
+</div>
+
+<!-- ───── PROJECT SCREEN ───── -->
+
+<div id="projScreen">
+  <div class="proj-inner">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,var(--amber),#d97706);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 6px 20px rgba(245,158,11,0.4)">🚌</div>
+        <div>
+          <div style="font-size:20px;font-weight:800">Servis Asistanı</div>
+          <div style="font-size:12px;color:var(--muted)" id="projWelcome">Hoş geldiniz</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="openHelpPanel('proj')">❓ Yardım</button>
+        <button class="btn btn-ghost btn-sm" onclick="switchAccount()">👤 Hesap</button>
+      </div>
+    </div>
+    <div class="label" style="margin-bottom:10px">Projelerim — Okul / İşletme</div>
+    <div class="proj-grid" id="projGrid"></div>
+    <div class="card" style="padding:16px;margin-top:8px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:7px">💡 Nasıl Çalışır?</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.8">
+        Her proje = bir okul veya işletme. Farklı adminler aynı uygulamayı kendi projelerinde bağımsız kullanır.<br>
+        Bir admin en fazla <strong>5 proje</strong> yönetebilir.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ───── APP SHELL ───── -->
+
+<div id="appShell">
+  <div class="topbar">
+    <div class="logo-wrap">
+      <div class="logo-mark">🚌</div>
+      <div>
+        <div class="logo-name" id="projTitleTxt">Servis Asistanı</div>
+        <div class="logo-sub" id="projSubTxt"></div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="notif-chip" id="pendBadge" style="display:none" onclick="switchTab('admin_bas')">
+        🔔 <span id="pendCount">0</span>
+      </div>
+      <button class="voice-btn" id="voiceBtn" onclick="toggleVoice()" title="Sesli rehber">🔇</button>
+      <button class="btn btn-ghost btn-sm" onclick="openHelpPanel(currentTab)" style="padding:6px 10px">❓</button>
+      <div class="user-chip" onclick="goProjects()">
+        <div class="user-av" id="uAv"></div>
+        <div style="font-size:11px;font-weight:700;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="uNm"></div>
+      </div>
+    </div>
+  </div>
+  <div class="tabbar" id="tabBar"></div>
+  <div id="content" class="scr"></div>
+</div>
+
+<!-- ───── HELP PANEL ───── -->
+
+<div class="help-slide" id="helpSlide">
+  <div class="help-hd">
+    <div style="font-size:14px;font-weight:700">❓ Yardım & Rehber</div>
+    <div style="display:flex;gap:8px">
+      <button class="voice-btn" id="helpVoiceBtn" onclick="speakCurrentHelp()">🔊</button>
+      <button class="mc" onclick="closeHelp()">✕</button>
+    </div>
+  </div>
+  <div class="help-body" id="helpBody"></div>
+</div>
+
+<!-- ───── MODALS ───── -->
+
+<!-- Login -->
+
+<div class="ov" id="loginModal">
+  <div class="modal" style="max-width:440px">
+    <div class="mh"><div class="mt">Giriş Yap / Kayıt Ol</div></div>
+    <div class="mb">
+      <div class="fg">
+        <div class="label" style="margin-bottom:8px">Rolünüzü Seçin</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+          <div id="roleAdmCard" onclick="selRole('admin')" style="padding:13px;border-radius:var(--r-md);border:2px solid var(--amber);background:rgba(245,158,11,0.08);cursor:pointer;text-align:center;transition:all 0.2s">
+            <div style="font-size:24px;margin-bottom:5px">🖥️</div>
+            <div style="font-size:13px;font-weight:700">Admin</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">Yönetici</div>
+          </div>
+          <div id="roleDrvCard" onclick="selRole('driver')" style="padding:13px;border-radius:var(--r-md);border:2px solid var(--rim);background:var(--glass);cursor:pointer;text-align:center;transition:all 0.2s">
+            <div style="font-size:24px;margin-bottom:5px">🚌</div>
+            <div style="font-size:13px;font-weight:700">Şoför</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">Sürücü</div>
+          </div>
+        </div>
+      </div>
+      <div class="fg-row">
+        <div class="fg"><label class="fl">Ad Soyad <span class="req">*</span></label><input class="fi" id="l_name" placeholder="Ahmet Yılmaz"></div>
+        <div class="fg"><label class="fl">Sıfat</label><input class="fi" id="l_title" placeholder="Koordinatör..."></div>
+      </div>
+      <div id="drvFields">
+        <div class="fg-row">
+          <div class="fg"><label class="fl">Plaka</label><input class="fi" id="l_plate" placeholder="34 ABC 123" style="text-transform:uppercase"></div>
+          <div class="fg"><label class="fl">Araç No</label><input class="fi" id="l_vno" placeholder="Servis-1"></div>
+        </div>
+        <div class="fg"><label class="fl">Telefon</label><input class="fi" id="l_phone" placeholder="05XX XXX XX XX" type="tel"></div>
+      </div>
+      <button class="btn btn-amber btn-block btn-lg" onclick="doLogin()" style="margin-top:8px">Giriş Yap →</button>
+      <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--muted)">
+        Hızlı test: <button onclick="loadDemo()" style="background:none;border:none;color:var(--amber2);font-size:12px;cursor:pointer;font-family:inherit;font-weight:700">Demo Yükle</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New Project -->
+
+<div class="ov" id="newProjModal">
+  <div class="modal" style="max-width:440px">
+    <div class="mh"><div class="mt">➕ Yeni Proje</div><button class="mc" onclick="closeModal('newProjModal')">✕</button></div>
+    <div class="mb">
+      <div class="fg"><label class="fl">Proje Adı <span class="req">*</span></label><input class="fi" id="pj_name" placeholder="Atatürk İlkokulu Servisi"></div>
+      <div class="fg-row">
+        <div class="fg"><label class="fl">Şehir</label><input class="fi" id="pj_city" placeholder="İstanbul"></div>
+        <div class="fg"><label class="fl">İkon</label><input class="fi" id="pj_icon" placeholder="🏫" maxlength="2" value="🏫"></div>
+      </div>
+      <div class="fg">
+        <label class="fl">Renk</label>
+        <div style="display:flex;gap:9px;margin-top:5px" id="swatches">
+          <div class="swatch sel" style="background:#f59e0b" onclick="pickColor('#f59e0b',this)"></div>
+          <div class="swatch" style="background:#3b82f6" onclick="pickColor('#3b82f6',this)"></div>
+          <div class="swatch" style="background:#10b981" onclick="pickColor('#10b981',this)"></div>
+          <div class="swatch" style="background:#8b5cf6" onclick="pickColor('#8b5cf6',this)"></div>
+          <div class="swatch" style="background:#ef4444" onclick="pickColor('#ef4444',this)"></div>
+          <div class="swatch" style="background:#f97316" onclick="pickColor('#f97316',this)"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="closeModal('newProjModal')">İptal</button>
+        <button class="btn btn-amber" style="flex:1;justify-content:center" onclick="createProject()">Oluştur ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Student -->
+
+<div class="ov" id="addStudModal">
+  <div class="modal">
+    <div class="mh"><div class="mt">➕ Öğrenci Ekle</div><button class="mc" onclick="closeModal('addStudModal')">✕</button></div>
+    <div class="mb">
+      <div class="fg-row">
+        <div class="fg"><label class="fl">Ad Soyad <span class="req">*</span></label><input class="fi" id="f_name" placeholder="Ahmet Yılmaz"></div>
+        <div class="fg"><label class="fl">Sınıf</label><input class="fi" id="f_class" placeholder="5-A"></div>
+      </div>
+      <div class="fg"><label class="fl">Adres <span class="req">*</span></label><input class="fi" id="f_addr" placeholder="Atatürk Mah. No:15 Kadıköy"></div>
+      <div class="fg-row">
+        <div class="fg"><label class="fl">Öğrenci Tel</label><input class="fi" id="f_stutel" type="tel" placeholder="05XX..."></div>
+        <div class="fg"><label class="fl">Veli Tel <span class="req">*</span></label><input class="fi" id="f_partel" type="tel" placeholder="05XX..."></div>
+      </div>
+      <div class="fg-row">
+        <div class="fg"><label class="fl">Mesafe (km) <span class="req">*</span></label><input class="fi" id="f_km" type="number" step="0.1" value="0"></div>
+        <div class="fg"><label class="fl">Veli Adı</label><input class="fi" id="f_parname" placeholder="Mehmet Yılmaz"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="closeModal('addStudModal')">İptal</button>
+        <button class="btn btn-blue" style="flex:1;justify-content:center" onclick="addStudent()">Kaydet ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Stop -->
+
+<div class="ov" id="addStopModal">
+  <div class="modal">
+    <div class="mh"><div class="mt">🚏 Ara Durak Ekle</div><button class="mc" onclick="closeModal('addStopModal')">✕</button></div>
+    <div class="mb">
+      <div class="fg"><label class="fl">Durak Adı <span class="req">*</span></label><input class="fi" id="s_name" placeholder="Merkez Kavşağı"></div>
+      <div class="fg"><label class="fl">Konum Açıklaması</label><input class="fi" id="s_loc" placeholder="Belediye önü..."></div>
+      <div class="fg-row">
+        <div class="fg"><label class="fl">Mesafe (km)</label><input class="fi" id="s_km" type="number" step="0.1" value="0"></div>
+        <div class="fg"><label class="fl">Bekleme (dk)</label><input class="fi" id="s_wait" type="number" value="3"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="closeModal('addStopModal')">İptal</button>
+        <button class="btn btn-amber" style="flex:1;justify-content:center" onclick="addStop()">🚏 Ekle</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Fiyat -->
+
+<div class="ov" id="fiyatModal">
+  <div class="modal" style="max-width:460px">
+    <div class="mh"><div class="mt">💰 Fiyat Teklifi</div><button class="mc" onclick="closeModal('fiyatModal')">✕</button></div>
+    <div class="mb">
+      <div id="fiyatInfo" style="background:var(--glass);border:1px solid var(--rim);border-radius:var(--r-md);padding:11px 14px;margin-bottom:14px;font-size:13px"></div>
+      <div class="fg-row">
+        <div class="fg"><label class="fl">Aylık Fiyat (₺) <span class="req">*</span></label><input class="fi" id="ft_f" type="number" placeholder="1500" oninput="updFiyat()"></div>
+        <div class="fg"><label class="fl">Kaç Ay</label><input class="fi" id="ft_ay" type="number" value="9" oninput="updFiyat()"></div>
+      </div>
+      <div class="card-amber" style="padding:16px;text-align:center;margin-bottom:14px">
+        <div class="label" style="margin-bottom:4px">Aylık Teklif</div>
+        <div style="font-size:36px;font-weight:800;font-family:'Space Mono',monospace;color:var(--amber2)" id="fPrev">₺0</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Yıllık: <span id="fPrevY">₺0</span></div>
+      </div>
+      <div class="fg"><label class="fl">Güzergah</label><input class="fi" id="ft_g" placeholder="Atatürk Cad. – Okul Güzergahı"></div>
+      <div class="fg"><label class="fl">Ödeme Tarihi</label><input class="fi" id="ft_o" value="Her ayın 1'i"></div>
+      <div class="fg"><label class="fl">Not</label><textarea class="fi" id="ft_n" rows="2" placeholder="Fiyata KDV dahildir..."></textarea></div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="closeModal('fiyatModal')">İptal</button>
+        <button class="btn btn-green" style="flex:1;justify-content:center" onclick="sendFiyat()">💰 Gönder</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Basvuru Detay -->
+
+<div class="ov" id="basModal">
+  <div class="modal"><div class="mh"><div class="mt" id="basTitle">Başvuru</div><button class="mc" onclick="closeModal('basModal')">✕</button></div><div class="mb" id="basBody"></div></div>
+</div>
+
+<!-- Sofor Detay -->
+
+<div class="ov" id="drvModal">
+  <div class="modal" style="max-width:460px"><div class="mh"><div class="mt" id="drvTitle">Şoför</div><button class="mc" onclick="closeModal('drvModal')">✕</button></div><div class="mb" id="drvBody"></div></div>
+</div>
+
+<!-- Assign -->
+
+<div class="ov" id="asmModal">
+  <div class="modal"><div class="mh"><div class="mt" id="asmTitle">Şoför Ata</div><button class="mc" onclick="closeModal('asmModal')">✕</button></div><div class="mb" id="asmBody"></div></div>
+</div>
+
+<!-- QR -->
+
+<div class="ov" id="qrModal">
+  <div class="modal" style="max-width:380px">
+    <div class="mh"><div class="mt">📱 Veli QR Kayıt</div><button class="mc" onclick="closeModal('qrModal')">✕</button></div>
+    <div class="mb" style="text-align:center">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:13px">Veliler bu kodu okutunca kayıt formu açılır</div>
+      <div class="qr-box" id="qrDiv"></div>
+      <div style="display:flex;align-items:center;gap:8px;background:var(--glass);border:1px solid var(--rim);border-radius:var(--r-sm);padding:9px 13px;margin-top:12px">
+        <span style="flex:1;font-family:'Space Mono',monospace;font-size:10px;color:var(--cyan);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="qrUrlTxt"></span>
+        <button class="btn btn-ghost btn-sm" onclick="copyQr()">📋</button>
+      </div>
+      <button class="btn btn-amber btn-block" style="margin-top:10px" onclick="window.print()">🖨️ Yazdır</button>
+    </div>
+  </div>
+</div>
+
+<!-- Veli Form -->
+
+<div class="ov" id="veliModal">
+  <div class="modal" style="max-width:540px">
+    <div class="mh"><div class="mt">🧾 Veli Kayıt Formu</div><button class="mc" onclick="closeModal('veliModal')">✕</button></div>
+    <div class="mb" id="veliBody"></div>
+  </div>
+</div>
+
+<div id="tc"></div>
+
+<script>
+// ============================================================
+// CONSTANTS
+// ============================================================
+const GS=17;
+const GC=['#f59e0b','#3b82f6','#10b981','#8b5cf6','#ef4444','#06b6d4','#ec4899','#f97316','#6366f1','#84cc16','#a855f7','#14b8a6'];
+const ACCS_KEY='sa_accs';
+const MAX_PROJ=5;
+const DEV_PHONE='905533498766';
+const DEV_PWD='SERVIS2025DEV#MSTR';
+const LK='sa_lic';
+const AK='sa_act';
+const DK='sa_dev';
+const ONE_YEAR=365*24*60*60*1000;
+
+// ============================================================
+// GLOBALS
+// ============================================================
+let curUser=null,curProj=null,currentTab=null;
+let pickColor_sel='#f59e0b';
+let selRole_val='admin';
+let voiceOn=false,curSpeech=null,helpOpen=false;
+let curFiyatId=null,stopTimers={},traffic='low';
+let simInt=null,gpsWatch=null,myLat=null,myLng=null;
+let adminMap=null,drvMap=null,adminMarkers={},schoolMark=null,selfMark=null;
+let P={},veliData={},veliStep=1;
+
+// ============================================================
+// STORAGE
+// ============================================================
+const SK=id=>'sa_p_'+id;
+const BK=id=>'sa_b_'+id;
+function getAccs(){try{return JSON.parse(localStorage.getItem(ACCS_KEY)||'[]');}catch{return[];}}
+function saveAccs(a){localStorage.setItem(ACCS_KEY,JSON.stringify(a));}
+function getPD(id){try{return JSON.parse(localStorage.getItem(SK(id))||'null')||initPD();}catch{return initPD();}}
+function savePD(id,d){localStorage.setItem(SK(id),JSON.stringify(d));}
+function getBas(pid){try{return JSON.parse(localStorage.getItem(BK(pid))||'[]');}catch{return[];}}
+function saveBas(pid,l){localStorage.setItem(BK(pid),JSON.stringify(l));}
+function initPD(){return{students:[],stops:[],drivers:[],groupAssignments:{},driverStatus:{},schoolLat:null,schoolLng:null};}
+function saveCP(){if(curProj&&P[curProj.id])savePD(curProj.id,P[curProj.id]);}
+function D(){return P[curProj?.id]||initPD();}
+
+// ============================================================
+// LICENSE SYSTEM
+// ============================================================
+function getLics(){try{return JSON.parse(localStorage.getItem(LK)||'[]');}catch{return[];}}
+function saveLics(l){localStorage.setItem(LK,JSON.stringify(l));}
+function getAct(){try{return JSON.parse(localStorage.getItem(AK)||'null');}catch{return null;}}
+function saveAct(a){localStorage.setItem(AK,JSON.stringify(a));}
+function isDevM(){return localStorage.getItem(DK)==='1';}
+function devId(){let i=localStorage.getItem('sa_did');if(!i){i=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('sa_did',i);}return i;}
+function genCode(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';const s=()=>Array.from({length:4},()=>c[Math.floor(Math.random()*c.length)]).join('');return s()+'-'+s()+'-'+s();}
+function fmtDate(ms){return new Date(ms).toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'});}
+
+function checkLicense(){
+  if(isDevM()){showLic('dev');return false;}
+  const a=getAct();
+  if(a){
+    if(a.expiresAt&&Date.now()>a.expiresAt){
+      localStorage.removeItem(AK);
+      showLic('activate');
+      setTimeout(()=>{setLicMsg('Lisans suresi doldu. WhatsApp ile yeni kod isteyin.','err');},200);
+      return false;
+    }
+    const lics=getLics();
+    const l=lics.find(x=>x.code===a.code);
+    if(l&&l.status==='expired'){localStorage.removeItem(AK);showLic('activate');return false;}
+    return true;
+  }
+  showLic('activate');
+  return false;
+}
+
+function showLic(mode){
+  document.getElementById('licScreen').classList.add('show');
+  if(mode==='activate') renderLicActivate();
+  else renderLicDev();
+}
+function hideLic(){document.getElementById('licScreen').classList.remove('show');}
+
+function setLicMsg(txt,cls){
+  const el=document.getElementById('licMsg');
+  if(el){el.textContent=txt;el.className='lic-msg show '+cls;}
+}
+
+function renderLicActivate(){
+  document.getElementById('licCard').innerHTML=`
+    <div class="lic-logo">
+      <div class="lic-icon">🚌</div>
+      <div class="lic-title-txt">Servis Asistanı</div>
+      <div class="lic-sub-txt">Kullanmak icin 1 yillik lisans kodu gereklidir.<br>Asagidan WhatsApp ile kod isteyebilirsiniz.</div>
+    </div>
+    <button class="btn btn-wa btn-block btn-lg" onclick="reqWA()" style="margin-bottom:14px">
+      💬 WhatsApp ile Kod Iste
+    </button>
+    <div class="sep-row"><span style="font-size:11px;color:var(--muted)">Kodunuz varsa girin</span></div>
+    <input class="code-input" id="licInput" placeholder="XXXX-XXXX-XXXX" maxlength="14"
+      oninput="fmtCode(this)" onkeydown="if(event.key==='Enter')doActivate()">
+    <div class="lic-msg" id="licMsg"></div>
+    <button class="btn btn-amber btn-block btn-lg" onclick="doActivate()">Kodu Onayla — Baslat</button>
+    <div style="text-align:center;margin-top:18px;padding-top:14px;border-top:1px solid var(--rim)">
+      <button onclick="promptDev()" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;font-family:inherit">Gelistirici Girisi</button>
+    </div>`;
+}
+
+function reqWA(){
+  const msg='Servis Asistani - Lisans Talebi\n\nMerhaba, uygulamanizi kullanmak istiyorum.\n\nCihaz ID: '+devId()+'\nTarih: '+new Date().toLocaleString('tr-TR')+'\n\nLutfen 1 yillik aktivasyon kodumu gonder misiniz?';
+  window.open('https://wa.me/'+DEV_PHONE+'?text='+encodeURIComponent(msg),'_blank');
+  setLicMsg('WhatsApp acildi! Mesaj gonderdikten sonra kodu buraya girin.','ok');
+}
+
+function fmtCode(el){
+  let v=el.value.replace(/[^A-Z0-9]/gi,'').toUpperCase();
+  if(v.length>4)v=v.slice(0,4)+'-'+v.slice(4);
+  if(v.length>9)v=v.slice(0,9)+'-'+v.slice(9);
+  el.value=v.slice(0,14);
+  el.classList.remove('ok','bad');
+  const m=document.getElementById('licMsg');
+  if(m)m.className='lic-msg';
+}
+
+function doActivate(){
+  const code=(document.getElementById('licInput')?.value||'').trim().toUpperCase();
+  if(!code||code.length<14){setLicMsg('Kod formati hatali: XXXX-XXXX-XXXX','err');return;}
+  const lics=getLics();
+  const lic=lics.find(l=>l.code===code);
+  if(!lic){document.getElementById('licInput').classList.add('bad');setLicMsg('Bu kod bulunamadi. Gelistirici ile iletisime gecin.','err');return;}
+  if(lic.status==='used'||lic.status==='expired'){document.getElementById('licInput').classList.add('bad');setLicMsg('Bu kodun suresi dolmus veya kullanilmis.','err');return;}
+  const now=Date.now();
+  const exp=now+ONE_YEAR;
+  lic.status='active';lic.activatedAt=now;lic.expiresAt=exp;lic.deviceId=devId();
+  saveLics(lics);
+  saveAct({code,kurum:lic.kurum,activatedAt:now,expiresAt:exp,deviceId:devId()});
+  document.getElementById('licInput').classList.add('ok');
+  setLicMsg('Aktivasyon basarili! 1 yillik lisans: '+fmtDate(exp)+' tarihine kadar gecerli.','ok');
+  setTimeout(()=>{hideLic();checkAccount();},2000);
+}
+
+function renderLicDev(){
+  const lics=getLics();
+  const now=Date.now();
+  const nAct=lics.filter(l=>l.status==='active'&&(!l.expiresAt||l.expiresAt>now)).length;
+  const nPend=lics.filter(l=>l.status==='pending').length;
+  const nExp=lics.length-nAct-nPend;
+  const rows=lics.length===0
+    ?'<div style="color:var(--muted);font-size:12px;padding:10px 0;text-align:center">Henuz lisans yok</div>'
+    :lics.slice().reverse().map(l=>{
+      const exp=l.expiresAt&&l.expiresAt<now;
+      const cls=l.status==='active'&&!exp?'dr-active':l.status==='pending'?'dr-pending':'dr-expired';
+      const lbl=l.status==='active'&&!exp?'Aktif':l.status==='pending'?'Bekliyor':'Bitti';
+      const clr=l.status==='active'&&!exp?'var(--green2)':l.status==='pending'?'var(--amber2)':'var(--red2)';
+      return '<div class="dev-row '+cls+'"><div style="flex:1;min-width:0"><div class="dev-code">'+l.code+'</div><div style="font-size:10px;color:var(--muted);margin-top:3px">'+(l.kurum||'Kurum yok')+' &bull; '+l.tarih+'</div>'+(l.activatedAt?'<div style="font-size:10px;color:var(--cyan)">Bitis: '+fmtDate(l.expiresAt)+'</div>':'')+'</div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0"><div style="font-size:11px;font-weight:700;color:'+clr+'">'+lbl+'</div><button onclick="sendCode(\''+l.code+'\')" class="btn btn-wa btn-sm">WA Gonder</button>'+(l.status!=='used'?'<button onclick="revokeCode(\''+l.code+'\')" class="btn btn-red btn-sm">Iptal</button>':'')+'</div></div>';
+    }).join('');
+  document.getElementById('licCard').innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <div><div style="font-size:16px;font-weight:800">Gelistirici Paneli</div><div style="font-size:11px;color:var(--muted);margin-top:2px">Lisans Yonetimi</div></div>
+      <button class="btn btn-ghost btn-sm" onclick="devLogout()">Cikis</button>
+    </div>
+    <div class="stat-row" style="margin-bottom:16px">
+      <div class="stat-box"><div class="stat-num" style="color:var(--green2)">${nAct}</div><div class="stat-lbl">Aktif</div></div>
+      <div class="stat-box"><div class="stat-num" style="color:var(--amber2)">${nPend}</div><div class="stat-lbl">Bekliyor</div></div>
+      <div class="stat-box"><div class="stat-num" style="color:var(--muted)">${nExp}</div><div class="stat-lbl">Bitti</div></div>
+    </div>
+    <div style="margin-bottom:14px">
+      <div class="label" style="margin-bottom:8px">Yeni Lisans Olustur (1 Yil)</div>
+      <div style="display:flex;gap:8px">
+        <input class="fi" id="newKurum" placeholder="Kurum / Okul adi" style="flex:1">
+        <button class="btn btn-amber" onclick="createCode()">Uret</button>
+      </div>
+    </div>
+    <div class="label" style="margin-bottom:8px">Tum Lisanslar (${lics.length})</div>
+    <div class="dev-table">${rows}</div>
+    <button class="btn btn-blue btn-block" style="margin-top:14px" onclick="hideLic();checkAccount()">Uygulamaya Gec</button>`;
+}
+
+function createCode(){
+  const kurum=(document.getElementById('newKurum')?.value||'').trim();
+  if(!kurum){toast('Kurum adi girin!','error');return;}
+  const code=genCode();
+  const lics=getLics();
+  lics.push({code,kurum,status:'pending',tarih:new Date().toLocaleString('tr-TR'),activatedAt:null,expiresAt:null,deviceId:null});
+  saveLics(lics);
+  renderLicDev();
+  sendCode(code);
+}
+
+function sendCode(code){
+  const l=getLics().find(x=>x.code===code);
+  const msg='Servis Asistani - Aktivasyon Kodu\n\nMerhaba'+(l?.kurum?' '+l.kurum:'')+'!\n\n1 yillik aktivasyon kodunuz:\n\n'+code+'\n\nUygulamayi acin, kodu girin ve baslayin!\n\nBitis tarihi: '+fmtDate(Date.now()+ONE_YEAR);
+  window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+}
+
+function revokeCode(code){
+  if(!confirm('Bu lisansi iptal et?'))return;
+  const lics=getLics();
+  const l=lics.find(x=>x.code===code);
+  if(l){l.status='expired';l.expiresAt=Date.now()-1;}
+  saveLics(lics);
+  const a=getAct();
+  if(a?.code===code)localStorage.removeItem(AK);
+  renderLicDev();
+  toast('Lisans iptal edildi','warning');
+}
+
+function promptDev(){
+  const pw=prompt('Sifre:');
+  if(pw===DEV_PWD){localStorage.setItem(DK,'1');renderLicDev();}
+  else if(pw!=null)toast('Yanlis sifre','error');
+}
+function devLogout(){localStorage.removeItem(DK);renderLicActivate();}
+
+// ============================================================
+// UTILS
+// ============================================================
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2);}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function toast(msg,type,dur){
+  type=type||'info';dur=dur||3500;
+  const icons={success:`✅`,error:`❌`,info:`ℹ️`,warning:`⚠️`};
+  const t=document.createElement('div');
+  t.className='toast '+type;
+  t.innerHTML='<span>'+icons[type]+'</span><span>'+msg+'</span>';
+  document.getElementById('tc').appendChild(t);
+  setTimeout(()=>t.remove(),dur);
+}
+
+// ============================================================
+// VOICE
+// ============================================================
+const VT={
+  proj:`Proje secim ekranındasınız. Her proje bir okul veya isletmenin servis sistemini temsil eder.`,
+  admin_overview:`Genel bakis ekranındasınız. Aracların gercek konumunu haritada gorebilir, soforleri arayabilirsiniz.`,
+  admin_bas:'Basvuru yonetimi. Velilerin gonderdigi formlar burada, fiyat belirleyin, onaylayin.',
+  admin_groups:`Grup yonetimi. Ogrenciler km ye gore 17 li gruplara bolunur. Her gruba sofor atayın.`,
+  admin_students:`Ogrenci listesi. Uzaktan yakina siralidir. Eklenince otomatik gruba atanir.`,
+  admin_qr:`QR Kayit. Bu kodu yazdirip okul panosuna asin. Veliler form dolduruca basvuru gelir.`,
+  driver_route:`Gurzergah ekranidasiniz. Sol taraftan grup secin, ogrenci bindi butonuna basin.`,
+  driver_students:`Ogrencileriniz burada. Telefona tiklayarak arama yapabilirsiniz.`,
+};
+function toggleVoice(){
+  voiceOn=!voiceOn;
+  const btn=document.getElementById('voiceBtn');
+  btn.textContent=voiceOn?`🔊`:`🔇`;
+  btn.classList.toggle('speaking',voiceOn);
+  if(voiceOn&&currentTab)speakTxt(VT[currentTab]||'');
+  else stopSpeak();
+}
+function speakTxt(t){
+  if(!('speechSynthesis' in window))return;
+  stopSpeak();
+  const u=new SpeechSynthesisUtterance(t);
+  u.lang='tr-TR';u.rate=0.9;
+  speechSynthesis.speak(u);
+}
+function stopSpeak(){if(speechSynthesis?.speaking)speechSynthesis.cancel();}
+function speakCurrentHelp(){speakTxt(VT[currentTab]||VT.proj);}
+
+// ============================================================
+// HELP PANEL
+// ============================================================
+const HI={
+  proj:[
+    {i:`📁`,t:'Proje Nedir?',d:`Her proje bir okul veya isletme. Farkli adminler birbirinden bagımsız kullanır. Maksimum 5 proje.`},
+    {i:`➕`,t:'Yeni Proje',d:`Arti (+) kartına tıklayın. Ad, sehir ve ikon girin. Veriler sadece bu cihazda saklanır.`},
+  ],
+  admin_overview:[
+    {i:`🗺️`,t:'Gercek Harita',d:`Soforler GPS ile haritada gorunur. Noktalara tıklayınca detay balonu acılır.`},
+    {i:`📞`,t:'Tek Tus Arama',d:`Arac kartına tıkla → Sofor detayı → Simdi Ara butonu ile dogrudan arama.`},
+    {i:`📊`,t:'ETA Takibi',d:`Her aracın okula kalan suresi trafik durumuna gore guncellenir.`},
+  ],
+  admin_bas:[
+    {i:`📱`,t:'Veli Basvuru Akisi',d:`Veli QR okut → form doldur → basvuru gelir → fiyat belirle → veli kabul eder → ogrenci otomatik gruba eklenir.`},
+    {i:`💰`,t:'Fiyat Teklifi',d:`Fiyat Gonder butonuna tıklayın. WhatsApp ile veliye otomatik iletilir.`},
+  ],
+  admin_groups:[
+    {i:`👥`,t:'17li Gruplar',d:`Ogrenciler km ye gore sıralanır ve 17 li gruplara bolunur. Her gruba sofor atanır.`},
+    {i:`⚡`,t:'Otomatik Atama',d:`Otomatik Ata butonu grupları soflorlere esit dager.`},
+  ],
+  admin_students:[
+    {i:`🎒`,t:'Ogrenci Listesi',d:'Uzaktan yakina sirali. Eklenir eklenmez km ye gore dogru gruba otomatik atanir.'},
+    {i:`📍`,t:'Adres Harita',d:'Adres Harita butonuyla adresleri OpenStreetMap ile gercek koordinata cevirir.'},
+  ],
+  admin_qr:[
+    {i:`📱`,t:'QR Kullanimi',d:`Kodu yazdır, okul panosuna as. Veli telefonuyla tarayınca form acılır.`},
+  ],
+  driver_route:[
+    {i:`▶️`,t:'Gurzergahi Baslatma',d:`Sol taraftaki gruplardan birine tıklayın. Ilk ogrenci bilgisi ekrana gelir.`},
+    {i:`🚏`,t:'Ara Durak',d:`Duraga yaklaştıgınızda sayac otomatik baslar. Beklemeden Gec ile atlayabilirsiniz.`},
+    {i:`🚦`,t:'Trafik Durumu',d:`Trafigi gunceleyin. ETA hesabı ve durak bekleme suresi buna gore degisir.`},
+  ],
+  driver_students:[
+    {i:`📞`,t:'Arama',d:'Veli veya ogrenci numarasina tiklayarak dogrudan arama yapin.'},
+  ],
+};
+function openHelpPanel(tab){
+  const items=HI[tab]||HI.proj;
+  document.getElementById('helpBody').innerHTML=items.map(i=>'<div class="help-item"><div class="help-item-title"><span style="font-size:18px">'+i.i+'</span>'+i.t+'</div><div class="help-item-text">'+i.d+'</div></div>').join('');
+  document.getElementById('helpSlide').classList.add('open');
+  he
